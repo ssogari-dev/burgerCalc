@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>버거지수 지도 (2025. 1. 23.)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href='//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css' rel='stylesheet' type='text/css'>
+    <style>
+        /* 기본 레이아웃 */
+
+        * { font-family: 'Spoqa Han Sans Neo', 'sans-serif'; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        /* 상단 버튼 스타일 */
+.top-buttons {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    gap: 10px;
+}
+
+.icon-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.icon-button:hover {
+    background: #f5f5f5;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+        /* 지도 컨테이너 */
+        #map-container {
+            flex: 1;
+            height: 100vh;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-label {
+            background: none !important;
+            border: none !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
+            color: #333 !important;
+            text-shadow: -1px -1px 0 #fff,
+                         1px -1px 0 #fff,
+                         -1px 1px 0 #fff,
+                         1px 1px 0 #fff;
+            text-align: center !important;
+            white-space: nowrap;
+        }
+        
+        .leaflet-div-icon {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* 데이터 컨테이너 */
+        #data-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-width: 50%;
+            background: #fff;
+        }
+
+        /* 컨트롤 영역 */
+        .controls {
+            padding: 10px;
+            background: #fff;
+        }
+
+        /* 체크박스 그룹 */
+        .checkbox-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .checkbox-group h3 {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        /* 체크박스 레이블 */
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            height: 20px;
+            min-width: 80px;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .checkbox-label:hover {
+            background: #e8e8e8;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked + span {
+            color: #2d7dd2;
+            font-weight: 500;
+        }
+
+        /* 테이블 스타일 */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: auto;
+            min-width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        th::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 지도 범례 */
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .legend-gradient {
+            width: 200px;
+            height: 20px;
+            background: linear-gradient(to right, #ffffff, #ff0000);
+            margin: 5px 0;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        /* 모달 스타일 업데이트 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 50px auto;
+    padding: 20px;
+    width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.close {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close:hover {
+    color: #333;
+}
+
+        /* 날짜 선택기 */
+        .date-selector, .region-setting {
+            display: inline-block;
+            margin-right: 15px;
+        }
+        
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .date-select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        /* 기타 유틸리티 */
+        .primary-column {
+            background-color: #fff8db;
+            font-weight: 500;
+        }
+
+        .secondary-column {
+            background-color: white;
+            font-weight: normal;
+        }
+
+        .controls-group {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+        
+        .opacity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .opacity-control input[type="range"] {
+            width: 100px;
+        }
+        
+        #mapOpacity {
+            flex: 1;
+        }
+        
+        .map-label {
+            background: none;
+            border: none;
+            box-shadow: none;
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        
+/* 세부정보 스타일 */
+.detail-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.detail-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.region-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.info-value {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #333;
+}
+
+.franchise-section {
+    margin-top: 20px;
+}
+
+.franchise-section h3 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.franchise-item {
+    margin-bottom: 15px;
+}
+
+.franchise-count {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.franchise-count:hover {
+    background: #e0e0e0;
+}
+
+.store-list {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.store-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.store-list li {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.store-list li:last-child {
+    border-bottom: none;
+}
+
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+.notice-modal, .help-modal {
+    position: relative;
+    background-color: #fff;
+    margin: 50px auto;
+    padding: 20px;
+    width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.notice-content, .help-content {
+    margin: 20px 0;
+}
+
+.notice-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.notice-button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notice-button:hover {
+    background: #f5f5f5;
+}
+    </style>
+</head>
+<body>
+    <div class="top-buttons">
+        <button id="helpBtn" class="icon-button">
+            <i class="fas fa-question-circle"></i>
+            도움말
+        </button>
+        <a href="https://github.com/ssogari-dev" target="_blank" class="icon-button">
+            <i class="fab fa-github"></i>
+            GitHub
+        </a>
+        <a href="https://twitter.com/ssogari_dev" target="_blank" class="icon-button">
+            <i class="fab fa-twitter"></i>
+            Twitter
+        </a>
+    </div>
+
+    <!-- 좌측 지도 컨테이너 -->
+    <div id="map-container">
+        <div id="map"></div>
+        <div class="legend">
+            <h4 style="margin: 0 0 5px 0">비율</h4>
+            <div class="legend-gradient"></div>
+            <div class="legend-labels">
+                <span id="min-value">0.00</span>
+                <span id="max-value">1.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 우측 데이터 컨테이너 -->
+    <div id="data-container">
+        <!-- 컨트롤 영역 -->
+        <div class="controls">
+            <!-- 데이터 및 지역 설정 그룹 -->
+            <div class="controls-group">
+                <div class="date-selector">
+                    <label for="dateSelector">데이터 날짜:</label>
+                    <select id="dateSelector" class="date-select"></select>
+                </div>
+                <div class="region-setting">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="separateDistrict" checked>
+                        <span>광역시/특별시 외 '구' 구분</span>
+                    </label>
+                </div>
+            </div>
+        
+            <!-- 지도 설정 그룹 -->
+            <div class="controls-group">
+                <div class="map-controls">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="showStreetMap">
+                        <span>배경 지도</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="showBorders" checked>
+                        <span>경계선</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="showLabels" checked>
+                        <span>지명</span>
+                    </label>
+            
+                    <label>투명도:</label>
+                    <input type="range" id="mapOpacity" min="0" max="100" value="70">
+                    <span id="opacityValue">70%</span>
+                </div>
+            </div>
+            <div class="map-controls">
+            <div class="checkbox-group">
+                <h3>분자 항목</h3>
+                <label class="checkbox-label"><input type="checkbox" name="numerator" value="bgk" checked><span>버거킹</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="numerator" value="kfc" checked><span>KFC</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="numerator" value="mcdonalds" checked><span>맥도날드</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="numerator" value="subway" checked><span>써브웨이</span></label>
+            </div>
+            <div class="checkbox-group">
+                <h3>분모 항목</h3>
+                <label class="checkbox-label"><input type="checkbox" name="denominator" value="issac" checked><span>이삭토스트</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="denominator" value="lotteria" checked><span>롯데리아</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="denominator" value="momstouch" checked><span>맘스터치</span></label>
+            </div>
+            </div>
+        </div>
+
+        <!-- 통계 영역 -->
+        <div class="stats">
+            <h3>통계</h3>
+            <div id="statistics"></div>
+        </div>
+
+        <!-- 테이블 영역 -->
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th class="primary-column">시/도</th>
+                        <th class="primary-column">시/군/구</th>
+                        <th class="primary-column">비율</th>
+                        <th class="secondary-column">버거킹</th>
+                        <th class="secondary-column">KFC</th>
+                        <th class="secondary-column">맥도날드</th>
+                        <th class="secondary-column">써브웨이</th>
+                        <th class="secondary-column">이삭토스트</th>
+                        <th class="secondary-column">롯데리아</th>
+                        <th class="secondary-column">맘스터치</th>
+                        <th class="secondary-column">(버+K+맥+써)/롯</th>
+                        <th class="secondary-column">총 개수</th>
+                        <th class="secondary-column">면적(km²)</th>
+                        <th class="secondary-column">인구(만 명)</th>
+                        <th class="secondary-column">1만명당 롯데리아</th>
+                        <th class="secondary-column">1만명당 총 매장</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- 상세정보 모달 -->
+        <div id="detail-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modal-title"></h2>
+                <div id="modal-content"></div>
+            </div>
+        </div>
+
+        <!-- 공지사항 모달 -->
+        <div id="notice-modal" class="modal">
+            <div class="notice-modal">
+                <div id="notice-content"></div>
+                <div class="notice-buttons">
+                    <button class="notice-button" onclick="closeNotice(false)">닫기</button>
+                    <button class="notice-button" onclick="closeNotice(true)">다시 보지 않기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="help-modal" class="modal">
+            <div class="modal-content">
+              <span class="close">&times;</span>
+              <div id="help-content"></div>
+            </div>
+          </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src=".\script.js"></script>
+</body>
+</html>
