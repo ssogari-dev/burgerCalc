@@ -1,0 +1,8 @@
+<b>이용해주셔서 감사합니다</b><br><br>
+아직 Beta 서비스라 부족한 부분이 많습니다. 사용 방법이 궁금하시다면 화면 우측 상단의 '도움말'을 참고해주시기 바랍니다. <br><br>
+사용 중 불편한 부분이 있으시거나, 오류를 찾으신 경우, 데이터가 잘못된 경우 <a href="https://github.com/ssogari-dev/burgerCalc" target="_blank">Github Issue</a> 또는 <a href="mailto:admin@ssogari.dev" target="_blank">이메일(admin at ssogari dot dev)</a>로 보내주시면 조치하겠습니다.<br><br>
+<hr>
+본 사이트는 <b>모바일 환경을 지원하지 않습니다</b>. 가급적 PC 환경을 이용해주시고, 가로 화면이 지원되는 모바일을 사용해주시기 바랍니다.<br>
+<br>
+감사합니다<br>
+쏘가리 올림.
