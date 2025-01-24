@@ -329,6 +329,13 @@ function getColor(value, minValue, maxValue) {
  * @param {Object} geojsonData - korean.geojson 원본 데이터
  * @param {Array<Object>} ratios - calculateRatios() 결과
  */
+/**
+ * 이미 로드된 GeoJSON 데이터를 가공(processGeojsonData)하여
+ * 지도에 색칠하고, 마우스이벤트, 클릭 이벤트 등을 설정한다.
+ * 
+ * @param {Object} geojsonData - korean.geojson 원본 데이터
+ * @param {Array<Object>} ratios - calculateRatios() 결과
+ */
 function updateMapColors(geojsonData, ratios) {
     // 기존에 그려져 있던 GeoJSON 레이어가 있으면 제거
     if (geojsonLayer) {
@@ -363,8 +370,6 @@ function updateMapColors(geojsonData, ratios) {
         style: function (feature) {
             // feature.properties.sig_cd => 행정코드
             const huData = franchiseData.hu.find(item => item.sig_cd === feature.properties.sig_cd);
-
-            // ratios에서 해당 지역의 데이터 찾기
             const region = ratios.find(r =>
                 huData && r.area === huData.area && r.prov === huData.prov
             );
@@ -399,21 +404,40 @@ function updateMapColors(geojsonData, ratios) {
                 mouseout: function (e) {
                     geojsonLayer.resetStyle(e.target);
                 },
-                // 영역 클릭 시 상세 정보(모달) 표시
+                // 영역 클릭 시 상세 정보 모달 표시
                 click: function (e) {
-                    const huData = franchiseData.hu.find(item =>
+                    // GeoJSON 객체의 행정코드로부터 해당 지역의 인구/면적 데이터를 찾음
+                    const huData = franchiseData.hu.find(item => 
                         item.sig_cd === feature.properties.sig_cd
                     );
+                    // 찾은 지역 데이터로부터 계산된 비율 정보를 찾음
                     const region = ratios.find(r =>
                         huData && r.area === huData.area && r.prov === huData.prov
                     );
-                    // 테이블 행과 연동
+                    
+                    // 지역 정보가 있으면 모달 표시를 위한 가상의 테이블 행을 생성
                     if (region) {
-                        const rowIndex = ratios.indexOf(region) + 1; 
-                        const row = document.querySelector(`#data-table tbody tr:nth-child(${rowIndex})`);
-                        if (row) {
-                            showDetails(row);
-                        }
+                        const mockRow = {
+                            cells: [
+                                { textContent: region.prov },             // 도/광역시
+                                { textContent: region.area },             // 지역명
+                                { textContent: region.ratio.toFixed(2) }, // 계산된 비율
+                                { textContent: region.counts.bgk || 0 },  // 버거킹 매장 수
+                                { textContent: region.counts.kfc || 0 },  // KFC 매장 수
+                                { textContent: region.counts.mcdonalds || 0 }, // 맥도날드 매장 수
+                                { textContent: region.counts.subway || 0 },    // 써브웨이 매장 수
+                                { textContent: region.counts.issac || 0 },     // 이삭 매장 수
+                                { textContent: region.counts.lotteria || 0 },  // 롯데리아 매장 수
+                                { textContent: region.counts.momstouch || 0 }, // 맘스터치 매장 수
+                                { textContent: region.burgerRatio.toFixed(2) }, // 버거 비율
+                                { textContent: region.totalCount },            // 전체 매장 수
+                                { textContent: region.land.toFixed(2) },       // 면적
+                                { textContent: region.population.toFixed(1) }, // 인구(만 명)
+                                { textContent: region.lotteriaPopDensity.toFixed(2) }, // 롯데리아 인구 밀도
+                                { textContent: region.totalPopDensity.toFixed(2) }    // 전체 인구 밀도
+                            ]
+                        };
+                        showDetails(mockRow);
                     }
                 }
             });
